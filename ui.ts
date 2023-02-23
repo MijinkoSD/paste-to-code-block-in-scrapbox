@@ -21,9 +21,10 @@ export interface Button {
  * @param title 追加先のタイトル行
  */
 export function attachButtonToCodeBlock(
-  button: Button,
+  buttons: Button | Button[],
   title: Pick<TinyCodeBlock, "titleLine" | "pageInfo">,
 ) {
+  const btn = Array.isArray(buttons) ? buttons : [buttons];
   const { titleLine, pageInfo } = title;
   if (
     pageInfo.pageTitle != scrapbox.Page.title ||
@@ -31,18 +32,12 @@ export function attachButtonToCodeBlock(
   ) return;
   const buttonArea = getButtonAreaByID(titleLine.id);
   if (buttonArea === null) return;
-  const childs = buttonArea.children;
-  for (const child of childs) {
-    if (!(child instanceof HTMLElement)) continue;
-    if (child.title == button.title) return;
-  }
-
   addCursorEventListener((e) => {
     if (e.cursorLineId != titleLine.id) {
-      removeButton(button, buttonArea);
+      removeButton(btn, buttonArea);
       return;
     }
-    buttonArea.append(createButton(button));
+    addButton(btn, buttonArea);
   });
 
   // アタッチしたらデタッチ用の関数を返す
@@ -62,22 +57,47 @@ function getButtonAreaByID(lineId: string) {
 }
 
 /** ボタンのDOMオブジェクトを作成する */
-function createButton(button: Button) {
-  const buttonDOM = document.createElement("span");
-  buttonDOM.title = button.title;
-  buttonDOM.classList.add(...["button", button.title.toLowerCase()]);
-  buttonDOM.onclick = button.onClick;
-  const icon = document.createElement("i");
-  icon.classList.add(...button.iconClass);
-  buttonDOM.append(icon);
-  return buttonDOM;
+function createButton(buttons: Button[]) {
+  const buttonDOMs: HTMLSpanElement[] = [];
+  for (const button of buttons) {
+    const buttonDOM = document.createElement("span");
+    buttonDOM.title = button.title;
+    buttonDOM.classList.add(...["button", button.title.toLowerCase()]);
+    buttonDOM.onclick = button.onClick;
+    const icon = document.createElement("i");
+    icon.classList.add(...button.iconClass);
+    buttonDOM.append(icon);
+    buttonDOMs.push(buttonDOM);
+  }
+  return buttonDOMs;
+}
+
+/**
+ * ボタンを特定のDOMの直下に追加する。 \
+ * 既に同名（title属性が同じ）DOMが存在していれば作成しない。
+ */
+function addButton(buttons: Button[], buttonArea: Element) {
+  const childs = buttonArea.children;
+  for (const button of buttons) {
+    const isButtonExist = Array(...childs).some((e) => {
+      if (!(e instanceof HTMLSpanElement)) return false;
+      return e.title == button.title;
+    });
+    if (isButtonExist) continue;
+    buttonArea.append(...createButton([button]));
+  }
 }
 
 /** コードブロックタイトルに追加したボタンを削除する */
-function removeButton(button: Button, buttonArea: Element) {
-  const nodes = buttonArea.children;
-  for (const node of nodes) {
-    if (!(node instanceof HTMLSpanElement)) continue;
-    if (node.title == button.title) node.remove();
+function removeButton(buttons: Button[], buttonArea: Element) {
+  const childs = buttonArea.children;
+  const removeTargets: HTMLSpanElement[] = [];
+  for (const child of childs) {
+    if (!(child instanceof HTMLSpanElement)) continue;
+    for (const button of buttons) {
+      if (child.title != button.title) continue;
+      removeTargets.push(child);
+    }
   }
+  removeTargets.forEach((e) => e.remove());
 }
