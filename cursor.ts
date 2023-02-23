@@ -73,7 +73,7 @@ function observeCursor(): void {
 }
 
 /** カーソルの監視を停止する */
-function disconnectObserver() {
+function disconnectObserver(): void {
   removeAllCursorEventListener();
   if (cursorObserver === undefined) return;
   cursorObserver.disconnect();
