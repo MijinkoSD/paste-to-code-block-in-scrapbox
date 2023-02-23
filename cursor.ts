@@ -26,6 +26,10 @@ export function addCursorEventListener(handler: CursorEventHandler): void {
   observeCursor();
 }
 
+/**
+ * カーソル移動時のイベントを発生させる \
+ * （登録した関数をまとめて実行するだけで、これ単体では自発的に実行されない）
+ */
 async function execCursorEvents(): Promise<void> {
   if (cursorEvents.length <= 0) return;
   const cursorLineId = findCursorLineId();
@@ -37,6 +41,7 @@ async function execCursorEvents(): Promise<void> {
   await Promise.all(wrappedEvents);
 }
 
+/** カーソル行の行IDを返す */
 function findCursorLineId(): string | null {
   const lines = document.querySelector(".page .lines");
   const nodes = lines?.children;
@@ -51,12 +56,7 @@ function findCursorLineId(): string | null {
   return null;
 }
 
-function disconnectObserver() {
-  removeAllCursorEventListener();
-  if (cursorObserver === undefined) return;
-  cursorObserver.disconnect();
-}
-
+/** カーソルを監視する */
 function observeCursor(): void {
   const targetNode = document.querySelector("#editor .cursor");
   if (
@@ -72,6 +72,14 @@ function observeCursor(): void {
   scrapbox.on("project:changed", disconnectObserver);
 }
 
+/** カーソルの監視を停止する */
+function disconnectObserver() {
+  removeAllCursorEventListener();
+  if (cursorObserver === undefined) return;
+  cursorObserver.disconnect();
+}
+
+/** カーソル移動時に実行する関数の登録を全て削除する */
 function removeAllCursorEventListener(): void {
   while (cursorEvents.length > 0) {
     cursorEvents.shift();

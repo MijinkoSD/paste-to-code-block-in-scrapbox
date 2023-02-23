@@ -13,6 +13,13 @@ export interface Button {
 }
 
 // 後でbuttons（複数形）にする
+/**
+ * コードブロックのタイトル行にボタンを追加する。 \
+ * 追加したボタンはページ遷移するまで有効。
+ *
+ * @param button 追加するボタン
+ * @param title 追加先のタイトル行
+ */
 export function attachButtonToCodeBlock(
   button: Button,
   title: Pick<TinyCodeBlock, "titleLine" | "pageInfo">,
@@ -43,15 +50,18 @@ export function attachButtonToCodeBlock(
   // ページ遷移時に削除するようにする
 }
 
+/** 行IDから行のDOMを取得するやつだけど結局使わなかった */
 function getLineByID(lineId: string) {
   return document.getElementById(lineId);
 }
 
+/** 行IDからコードブロックタイトル内のボタン領域を取得する */
 function getButtonAreaByID(lineId: string) {
   const selector = `#L${lineId} .code-block .code-block-start .tool-buttons`;
   return document.querySelector(selector);
 }
 
+/** ボタンのDOMオブジェクトを作成する */
 function createButton(button: Button) {
   const buttonDOM = document.createElement("span");
   buttonDOM.title = button.title;
@@ -63,6 +73,7 @@ function createButton(button: Button) {
   return buttonDOM;
 }
 
+/** コードブロックタイトルに追加したボタンを削除する */
 function removeButton(button: Button, buttonArea: Element) {
   const nodes = buttonArea.children;
   for (const node of nodes) {
