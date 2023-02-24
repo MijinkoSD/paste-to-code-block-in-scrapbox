@@ -73,7 +73,7 @@ export async function attachButtonToAllCodeBlocks(
 ): Promise<void> {
   const btn = Array.isArray(buttons) ? buttons : [buttons];
   attachedButtons.push(...btn);
-  if (isAddHandler) {
+  if (!isAddHandler) {
     const handler: CursorEventHandler = (e) => {
       for (const { codeBlock } of attachedCodeBlocks) {
         const titleId = codeBlock.titleLine.id;
