@@ -17,7 +17,6 @@ type ButtonDOM = HTMLSpanElement;
 
 interface AttachedCodeBlock {
   codeBlock: Pick<TinyCodeBlock, "titleLine" | "pageInfo">;
-  // handler: CursorEventHandler;
 }
 /**
  * ボタンを表示するようにしたコードブロックを管理する。 \
@@ -59,25 +58,16 @@ export function attachButtonToCodeBlock(
 }
 
 /**
- * 現在のページ内の全てのコードブロックのタイトル行にボタンを追加する。 \
- * 関数実行後に追加されたコードブロックも対象になる（予定）。
+ * 開いているページ内の全てのコードブロックのタイトル行にボタンを追加する。 \
+ * 関数実行後に追加されたコードブロックも対象になる。 \
+ * プロジェクト遷移時に解除される。
+ *
+ * @param buttons 追加するボタン
  */
 export async function attachButtonToAllCodeBlocks(
   buttons: Button | Button[],
 ): Promise<void> {
   const btn = Array.isArray(buttons) ? buttons : [buttons];
-  if (scrapbox.Page.title === null) return;
-
-  const codeBlocks = await getCodeBlocks({
-    project: scrapbox.Project.name,
-    title: scrapbox.Page.title,
-    lines: scrapbox.Page.lines,
-  });
-  attachedCodeBlocks.push(...codeBlocks.map((e): AttachedCodeBlock => {
-    return { codeBlock: e };
-  }));
-  console.log(attachedCodeBlocks);
-
   const handler: CursorEventHandler = (e) => {
     for (const { codeBlock: { titleLine } } of attachedCodeBlocks) {
       const buttonArea = getButtonAreaByID(titleLine.id);
@@ -90,6 +80,21 @@ export async function attachButtonToAllCodeBlocks(
     }
   };
   addCursorEventListener(handler);
+  await observeCodeBlock();
+  scrapbox.on("lines:changed", observeCodeBlock);
+}
+
+/** コードブロックの追加・削除を`attachedCodeBlocks`に反映する */
+async function observeCodeBlock(): Promise<void> {
+  if (scrapbox.Page.title === null) return;
+  const codeBlocks = await getCodeBlocks({
+    project: scrapbox.Project.name,
+    title: scrapbox.Page.title,
+    lines: scrapbox.Page.lines,
+  });
+  attachedCodeBlocks = codeBlocks.map((e): AttachedCodeBlock => {
+    return { codeBlock: e };
+  });
 }
 
 /** 行IDから行のDOMを取得するやつだけど結局使わなかった */

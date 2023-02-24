@@ -80,7 +80,7 @@ function observeCursor(): void {
   };
   cursorObserver = new MutationObserver(execCursorEvents);
   cursorObserver.observe(targetNode, observerOptions);
-  scrapbox.on("page:changed", disconnectObserver);
+  // scrapbox.on("page:changed", disconnectObserver);
   scrapbox.on("project:changed", disconnectObserver);
 }
 
