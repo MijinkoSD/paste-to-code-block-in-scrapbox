@@ -9,7 +9,10 @@ import { addCursorEventListener, CursorEventHandler } from "./cursor.ts";
 export interface Button {
   iconClass: string[];
   title: string;
-  onClick: (event: MouseEvent) => void;
+  onClick: (
+    event: MouseEvent,
+    codeBlock: Pick<TinyCodeBlock, "titleLine" | "pageInfo">,
+  ) => void;
 }
 
 const ButtonDOM = HTMLSpanElement;
@@ -35,14 +38,14 @@ let isAddHandler = false;
  *
  * @deprecated もうサポートしていないため非推奨
  * @param button 追加するボタン
- * @param title 追加先のコードブロック
+ * @param codeBlock 追加先のコードブロック
  */
 export function attachButtonToCodeBlock(
   buttons: Button | Button[],
-  title: Pick<TinyCodeBlock, "titleLine" | "pageInfo">,
+  codeBlock: Pick<TinyCodeBlock, "titleLine" | "pageInfo">,
 ): void {
   const btn = Array.isArray(buttons) ? buttons : [buttons];
-  const { titleLine, pageInfo } = title;
+  const { titleLine, pageInfo } = codeBlock;
   if (
     pageInfo.pageTitle != scrapbox.Page.title ||
     pageInfo.projectName != scrapbox.Project.name
@@ -54,7 +57,7 @@ export function attachButtonToCodeBlock(
       removeButton(btn, buttonArea);
       return;
     }
-    addButton(btn, buttonArea);
+    addButton(btn, buttonArea, codeBlock);
   });
 }
 
@@ -72,14 +75,15 @@ export async function attachButtonToAllCodeBlocks(
   attachedButtons.push(...btn);
   if (isAddHandler) {
     const handler: CursorEventHandler = (e) => {
-      for (const { codeBlock: { titleLine } } of attachedCodeBlocks) {
-        const buttonArea = getButtonAreaByID(titleLine.id);
+      for (const { codeBlock } of attachedCodeBlocks) {
+        const titleId = codeBlock.titleLine.id;
+        const buttonArea = getButtonAreaByID(titleId);
         if (buttonArea === null) continue;
-        if (e.cursorLineId != titleLine.id) {
+        if (e.cursorLineId != titleId) {
           removeButton(attachedButtons, buttonArea);
           continue;
         }
-        addButton(attachedButtons, buttonArea);
+        addButton(attachedButtons, buttonArea, codeBlock);
       }
     };
     addCursorEventListener(handler);
@@ -130,13 +134,16 @@ function getButtonAreaByID(lineId: string): Element | null {
 }
 
 /** ボタンのDOMオブジェクトを作成する */
-function createButton(buttons: Button[]): ButtonDOM[] {
+function createButton(
+  buttons: Button[],
+  codeBlock: Pick<TinyCodeBlock, "titleLine" | "pageInfo">,
+): ButtonDOM[] {
   const buttonDOMs: ButtonDOM[] = [];
   for (const button of buttons) {
     const buttonDOM = document.createElement("span");
     buttonDOM.title = button.title;
     buttonDOM.classList.add(...["button", button.title.toLowerCase()]);
-    buttonDOM.onclick = button.onClick;
+    buttonDOM.onclick = (e) => button.onClick(e, codeBlock);
     const icon = document.createElement("i");
     icon.classList.add(...button.iconClass);
     buttonDOM.append(icon);
@@ -149,7 +156,11 @@ function createButton(buttons: Button[]): ButtonDOM[] {
  * ボタンを特定のDOMの直下に追加する。 \
  * 既に同名（title属性が同じ）DOMが存在していれば作成しない。
  */
-function addButton(buttons: Button[], buttonArea: Element): void {
+function addButton(
+  buttons: Button[],
+  buttonArea: Element,
+  codeBlock: Pick<TinyCodeBlock, "titleLine" | "pageInfo">,
+): void {
   const childs = buttonArea.children;
   for (const button of buttons) {
     const isButtonExist = Array(...childs).some((e) => {
@@ -157,7 +168,7 @@ function addButton(buttons: Button[], buttonArea: Element): void {
       return e.title == button.title;
     });
     if (isButtonExist) continue;
-    buttonArea.append(...createButton([button]));
+    buttonArea.append(...createButton([button], codeBlock));
   }
 }
 
