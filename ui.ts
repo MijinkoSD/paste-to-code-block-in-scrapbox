@@ -24,11 +24,16 @@ interface AttachedCodeBlock {
  * こちらはコードブロックの追加・削除を追跡するために使用される。
  */
 let attachedCodeBlocks: AttachedCodeBlock[] = [];
+/** アタッチされたボタン */
+let attachedButtons: Button[] = [];
+/** コードブロックを監視していたら`true` */
+let isAddHandler = false;
 
 /**
  * コードブロックのタイトル行にボタンを追加する。 \
  * 追加したボタンはページ遷移するまで有効。
  *
+ * @deprecated もうサポートしていないため非推奨
  * @param button 追加するボタン
  * @param title 追加先のコードブロック
  */
@@ -51,10 +56,6 @@ export function attachButtonToCodeBlock(
     }
     addButton(btn, buttonArea);
   });
-
-  // アタッチしたらデタッチ用の関数を返す
-  // …やっぱ返すのやめた
-  // ページ遷移時に削除するようにする
 }
 
 /**
@@ -68,20 +69,33 @@ export async function attachButtonToAllCodeBlocks(
   buttons: Button | Button[],
 ): Promise<void> {
   const btn = Array.isArray(buttons) ? buttons : [buttons];
-  const handler: CursorEventHandler = (e) => {
-    for (const { codeBlock: { titleLine } } of attachedCodeBlocks) {
-      const buttonArea = getButtonAreaByID(titleLine.id);
-      if (buttonArea === null) continue;
-      if (e.cursorLineId != titleLine.id) {
-        removeButton(btn, buttonArea);
-        continue;
+  attachedButtons.push(...btn);
+  if (isAddHandler) {
+    const handler: CursorEventHandler = (e) => {
+      for (const { codeBlock: { titleLine } } of attachedCodeBlocks) {
+        const buttonArea = getButtonAreaByID(titleLine.id);
+        if (buttonArea === null) continue;
+        if (e.cursorLineId != titleLine.id) {
+          removeButton(attachedButtons, buttonArea);
+          continue;
+        }
+        addButton(attachedButtons, buttonArea);
       }
-      addButton(btn, buttonArea);
-    }
-  };
-  addCursorEventListener(handler);
+    };
+    addCursorEventListener(handler);
+    isAddHandler = true;
+  }
   await observeCodeBlock();
   scrapbox.on("lines:changed", observeCodeBlock);
+}
+
+export function detachButtonFromAllCodeBlocks(
+  buttons: Button | Button[],
+): void {
+  const btn = Array.isArray(buttons) ? buttons : [buttons];
+  attachedButtons = attachedButtons.filter((e) => {
+    btn.some((f) => f.title == e.title);
+  });
 }
 
 /** コードブロックの追加・削除を`attachedCodeBlocks`に反映する */
@@ -98,7 +112,7 @@ async function observeCodeBlock(): Promise<void> {
 }
 
 /** 行IDから行のDOMを取得するやつだけど結局使わなかった */
-function getLineByID(lineId: string): HTMLElement | null {
+function _getLineByID(lineId: string): HTMLElement | null {
   return document.getElementById(lineId);
 }
 
