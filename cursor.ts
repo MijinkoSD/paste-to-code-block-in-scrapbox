@@ -12,7 +12,7 @@ export interface CursorEvent {
 
 export type CursorEventHandler = (evenet: CursorEvent) => void | Promise<void>;
 
-const cursorEvents: CursorEventHandler[] = [];
+let cursorEvents: CursorEventHandler[] = [];
 
 let cursorObserver: MutationObserver | undefined;
 
@@ -24,6 +24,18 @@ export function addCursorEventListener(handler: CursorEventHandler): void {
   cursorEvents.push(handler);
   if (cursorObserver !== undefined) return;
   observeCursor();
+}
+
+/** `addCursorEventListener()`で追加した特定の関数を削除する。 */
+export function removeCursorEventListener(handler: CursorEventHandler): void {
+  cursorEvents = cursorEvents.filter((e) => Object.is(e, handler));
+}
+
+/** カーソル移動時に実行する関数の登録を全て削除する */
+function removeAllCursorEventListener(): void {
+  while (cursorEvents.length > 0) {
+    cursorEvents.shift();
+  }
 }
 
 /**
@@ -77,11 +89,4 @@ function disconnectObserver(): void {
   removeAllCursorEventListener();
   if (cursorObserver === undefined) return;
   cursorObserver.disconnect();
-}
-
-/** カーソル移動時に実行する関数の登録を全て削除する */
-function removeAllCursorEventListener(): void {
-  while (cursorEvents.length > 0) {
-    cursorEvents.shift();
-  }
 }

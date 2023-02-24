@@ -3,8 +3,8 @@
 /// <reference lib="dom" />
 /// <reference lib="dom.iterable" />
 
-import { scrapbox, TinyCodeBlock } from "./deps.ts";
-import { addCursorEventListener } from "./cursor.ts";
+import { getCodeBlocks, scrapbox, TinyCodeBlock } from "./deps.ts";
+import { addCursorEventListener, CursorEventHandler } from "./cursor.ts";
 
 export interface Button {
   iconClass: string[];
@@ -15,13 +15,23 @@ export interface Button {
 const ButtonDOM = HTMLSpanElement;
 type ButtonDOM = HTMLSpanElement;
 
-// 後でbuttons（複数形）にする
+interface AttachedCodeBlock {
+  codeBlock: Pick<TinyCodeBlock, "titleLine" | "pageInfo">;
+  // handler: CursorEventHandler;
+}
+/**
+ * ボタンを表示するようにしたコードブロックを管理する。 \
+ * `cursor.ts`の`cursorEvents`とも役割が被るが、あちらは実際にボタンを追加する際に使われるのに対し、
+ * こちらはコードブロックの追加・削除を追跡するために使用される。
+ */
+let attachedCodeBlocks: AttachedCodeBlock[] = [];
+
 /**
  * コードブロックのタイトル行にボタンを追加する。 \
  * 追加したボタンはページ遷移するまで有効。
  *
  * @param button 追加するボタン
- * @param title 追加先のタイトル行
+ * @param title 追加先のコードブロック
  */
 export function attachButtonToCodeBlock(
   buttons: Button | Button[],
@@ -46,6 +56,40 @@ export function attachButtonToCodeBlock(
   // アタッチしたらデタッチ用の関数を返す
   // …やっぱ返すのやめた
   // ページ遷移時に削除するようにする
+}
+
+/**
+ * 現在のページ内の全てのコードブロックのタイトル行にボタンを追加する。 \
+ * 関数実行後に追加されたコードブロックも対象になる（予定）。
+ */
+export async function attachButtonToAllCodeBlocks(
+  buttons: Button | Button[],
+): Promise<void> {
+  const btn = Array.isArray(buttons) ? buttons : [buttons];
+  if (scrapbox.Page.title === null) return;
+
+  const codeBlocks = await getCodeBlocks({
+    project: scrapbox.Project.name,
+    title: scrapbox.Page.title,
+    lines: scrapbox.Page.lines,
+  });
+  attachedCodeBlocks.push(...codeBlocks.map((e): AttachedCodeBlock => {
+    return { codeBlock: e };
+  }));
+  console.log(attachedCodeBlocks);
+
+  const handler: CursorEventHandler = (e) => {
+    for (const { codeBlock: { titleLine } } of attachedCodeBlocks) {
+      const buttonArea = getButtonAreaByID(titleLine.id);
+      if (buttonArea === null) continue;
+      if (e.cursorLineId != titleLine.id) {
+        removeButton(btn, buttonArea);
+        continue;
+      }
+      addButton(btn, buttonArea);
+    }
+  };
+  addCursorEventListener(handler);
 }
 
 /** 行IDから行のDOMを取得するやつだけど結局使わなかった */
