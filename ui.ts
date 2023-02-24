@@ -89,6 +89,13 @@ export async function attachButtonToAllCodeBlocks(
   scrapbox.on("lines:changed", observeCodeBlock);
 }
 
+/**
+ * コードブロックのタイトル行へボタンを追加するのをやめる。 \
+ * `attachButtonToAllCodeBlocks()`に渡したボタンとこの関数に渡したボタンのtitleが
+ * 合致していないとうまく動作しない。
+ *
+ * @param buttons 追加するのをやめるボタン
+ */
 export function detachButtonFromAllCodeBlocks(
   buttons: Button | Button[],
 ): void {
