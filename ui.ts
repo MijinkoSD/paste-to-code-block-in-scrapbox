@@ -11,7 +11,7 @@ export interface Button {
   title: string;
   onClick: (
     event: MouseEvent,
-    codeBlock: Pick<TinyCodeBlock, "titleLine" | "pageInfo">,
+    codeBlock: TinyCodeBlock,
   ) => void;
 }
 
@@ -19,7 +19,7 @@ const ButtonDOM = HTMLSpanElement;
 type ButtonDOM = HTMLSpanElement;
 
 interface AttachedCodeBlock {
-  codeBlock: Pick<TinyCodeBlock, "titleLine" | "pageInfo">;
+  codeBlock: TinyCodeBlock;
 }
 /**
  * ボタンを表示するようにしたコードブロックを管理する。 \
@@ -42,7 +42,7 @@ let isAddHandler = false;
  */
 export function attachButtonToCodeBlock(
   buttons: Button | Button[],
-  codeBlock: Pick<TinyCodeBlock, "titleLine" | "pageInfo">,
+  codeBlock: TinyCodeBlock,
 ): void {
   const btn = Array.isArray(buttons) ? buttons : [buttons];
   const { titleLine, pageInfo } = codeBlock;
@@ -136,7 +136,7 @@ function getButtonAreaByID(lineId: string): Element | null {
 /** ボタンのDOMオブジェクトを作成する */
 function createButton(
   buttons: Button[],
-  codeBlock: Pick<TinyCodeBlock, "titleLine" | "pageInfo">,
+  codeBlock: TinyCodeBlock,
 ): ButtonDOM[] {
   const buttonDOMs: ButtonDOM[] = [];
   for (const button of buttons) {
@@ -159,7 +159,7 @@ function createButton(
 function addButton(
   buttons: Button[],
   buttonArea: Element,
-  codeBlock: Pick<TinyCodeBlock, "titleLine" | "pageInfo">,
+  codeBlock: TinyCodeBlock,
 ): void {
   const childs = buttonArea.children;
   for (const button of buttons) {
