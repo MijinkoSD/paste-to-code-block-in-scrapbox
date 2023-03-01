@@ -163,12 +163,12 @@ async function addCursorEventHandler() {
   }
 
   // コードブロックの変更を監視
-  await observeCodeBlock();
-  scrapbox.on("lines:changed", observeCodeBlock);
+  await rerenderButtons();
+  scrapbox.on("lines:changed", rerenderButtons);
 }
 
 /** コードブロックの追加・削除を`attachedCodeBlocks`に反映する */
-async function observeCodeBlock(): Promise<void> {
+export async function rerenderButtons(): Promise<void> {
   if (scrapbox.Page.title === null) return;
   const codeBlocks = await getCodeBlocks({
     project: scrapbox.Project.name,
