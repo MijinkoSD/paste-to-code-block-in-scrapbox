@@ -55,11 +55,11 @@ export async function attachButtonToCodeBlock(
     pageInfo.pageTitle != scrapbox.Page.title ||
     pageInfo.projectName != scrapbox.Project.name
   ) return;
-  console.log("attachedCodeBlocks: %o", attachedCodeBlocks);
+  console.debug("attachedCodeBlocks: %o", attachedCodeBlocks);
   const attached = attachedCodeBlocks.find((e) =>
     e.codeBlock.titleLine.id == titleLine.id
   );
-  console.log("attached: %o", attached);
+  console.debug("attached: %o", attached);
   if (attached === undefined) {
     // アタッチリストにボタンが無ければ追加して終了
     attachedCodeBlocks.push({

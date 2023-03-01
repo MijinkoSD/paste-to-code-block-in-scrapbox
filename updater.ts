@@ -61,9 +61,9 @@ const pasteButton: Button = {
       nowCodeBlock.titleLine.text.trimStart().length + 1;
     const codeContent = nowCodeBlock.bodyLines.map((e) => e.text.slice(indent))
       .join("\n");
-    console.log("target code block: %o", nowCodeBlock);
-    console.log("clipboard text: %o", clipboardText);
-    console.log("code of adding history: %o", codeContent);
+    console.debug("target code block: %o", nowCodeBlock);
+    console.debug("clipboard text: %o", clipboardText);
+    console.debug("code of adding history: %o", codeContent);
     await pushHistory({ prevCode: codeContent, targetCodeBlock: nowCodeBlock });
     await updateCodeBlock(clipboardText, nowCodeBlock);
   },
@@ -92,8 +92,8 @@ const undoButton: Button = {
     );
     if (prevHistory === undefined) return;
     const { prevCode } = prevHistory;
-    console.log("prev code: %o", prevCode);
-    console.log("now code: %o", nowCode);
+    console.debug("prev code: %o", prevCode);
+    console.debug("now code: %o", nowCode);
     if (nowCode != prevCode) {
       const answer = await scrapboxAlert(
         buildInAlertModes.OK_CANCEL,
