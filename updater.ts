@@ -111,6 +111,9 @@ const undoButton: Button = {
   },
 };
 
+/**
+ * コードブロックにペーストボタンを追加する。
+ */
 export async function addPasteButton() {
   await attachButtonToAllCodeBlocks(pasteButton);
 }
