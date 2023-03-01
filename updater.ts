@@ -3,14 +3,27 @@
 
 import {
   buildInAlertModes,
+  getCodeBlocks,
+  scrapbox,
   scrapboxAlert,
   TinyCodeBlock,
   updateCodeBlock,
 } from "./deps.ts";
-import { attachButtonToAllCodeBlocks, Button } from "./ui.ts";
+import {
+  attachButtonToAllCodeBlocks,
+  attachButtonToCodeBlock,
+  Button,
+  detachButtonFromCodeBlock,
+} from "./ui.ts";
 
+/**
+ * 更新履歴。 \
+ * Undoする時に使用する履歴を保存する。
+ */
 interface UpdateHistory {
+  /** 前のコード本文 */
   prevCode: string;
+  /** 対象のコードブロック */
   targetCodeBlock: TinyCodeBlock;
 }
 let updateHistories: UpdateHistory[] = [];
@@ -20,41 +33,67 @@ const pasteButton: Button = {
   iconClass: ["fa-regular", "fa-paste"],
   onClick: async (ev, codeBlock) => {
     ev.preventDefault();
-    const clipboardText = await navigator.clipboard.readText()
-      .catch(async (e) => {
+    if (scrapbox.Page.title === null) return;
+    const clipboardText = (await navigator.clipboard.readText()
+      .catch(async () => {
         // 何らかの要因によりクリップボード内のテキストを取得できなかった場合
+        // 大抵はクリップボードの読み取り権限を取得できなかった場合
         await scrapboxAlert(
           buildInAlertModes.OK,
           "クリップボード内のテキストの取得に失敗しました",
           "ブラウザの権限設定にてクリップボードへのアクセスを許可しているかご確認下さい。",
         );
-      });
-    // 権限がないとここでrejectされるので、分岐を作っておく
+      }))
+      ?.replaceAll("\r\n", "\n");
     if (clipboardText === undefined) return;
-    console.log(clipboardText);
-    // ここの確認ダイアログは、コードを元に戻せるようになったら不要
-    const answer = await scrapboxAlert(
-      buildInAlertModes.OK_CANCEL,
-      "クリップボードの内容で以下のコードブロックを上書きしてもよろしいですか？",
-      codeBlock.titleLine.text,
-    );
-    console.log("answer: %o", answer);
-    if (answer.button != "OK") return;
-    pushHistory({ prevCode: clipboardText, targetCodeBlock: codeBlock });
-    await updateCodeBlock(clipboardText, codeBlock);
+
+    // undoボタンを追加して変更を反映する
+    const nowCodeBlocks = await getCodeBlocks({
+      project: scrapbox.Project.name,
+      title: scrapbox.Page.title,
+      lines: scrapbox.Page.lines,
+    }, {
+      titleLineId: codeBlock.titleLine.id,
+    });
+    if (nowCodeBlocks.length <= 0) return;
+    const nowCodeBlock = nowCodeBlocks[0];
+    const indent = nowCodeBlock.titleLine.text.length -
+      nowCodeBlock.titleLine.text.trimStart().length + 1;
+    const codeContent = nowCodeBlock.bodyLines.map((e) => e.text.slice(indent))
+      .join("\n");
+    console.log("target code block: %o", nowCodeBlock);
+    console.log("clipboard text: %o", clipboardText);
+    console.log("code of adding history: %o", codeContent);
+    await pushHistory({ prevCode: codeContent, targetCodeBlock: nowCodeBlock });
+    await updateCodeBlock(clipboardText, nowCodeBlock);
   },
 };
 
 const undoButton: Button = {
   title: "Undo",
   iconClass: ["fa-solid", "fa-arrow-rotate-left"],
-  onClick: async (ev, codeBlock) => {
-    const nowCode = codeBlock.bodyLines.map((e) => e.text).join("\n");
+  onClick: async (_ev, codeBlock) => {
+    if (scrapbox.Page.title === null) return;
+    const nowCodeBlocks = await getCodeBlocks({
+      project: scrapbox.Project.name,
+      title: scrapbox.Page.title,
+      lines: scrapbox.Page.lines,
+    }, {
+      titleLineId: codeBlock.titleLine.id,
+    });
+    if (nowCodeBlocks.length <= 0) return;
+    const nowCodeBlock = nowCodeBlocks[0];
+    const indent = nowCodeBlock.titleLine.text.length -
+      nowCodeBlock.titleLine.text.trimStart().length + 1;
+    const nowCode = nowCodeBlock.bodyLines.map((e) => e.text.slice(indent))
+      .join("\n");
     const prevHistory = updateHistories.find((e) =>
-      e.targetCodeBlock.titleLine.id == codeBlock.titleLine.id
+      e.targetCodeBlock.titleLine.id == nowCodeBlock.titleLine.id
     );
     if (prevHistory === undefined) return;
     const { prevCode } = prevHistory;
+    console.log("prev code: %o", prevCode);
+    console.log("now code: %o", nowCode);
     if (nowCode != prevCode) {
       const answer = await scrapboxAlert(
         buildInAlertModes.OK_CANCEL,
@@ -65,8 +104,10 @@ const undoButton: Button = {
       );
       if (answer.button != "OK") return;
     }
-    await updateCodeBlock(prevCode, codeBlock);
-    deleteHistory(prevHistory);
+
+    // undoボタンを削除
+    await deleteHistory(prevHistory);
+    await updateCodeBlock(prevCode, nowCodeBlock);
   },
 };
 
@@ -74,10 +115,11 @@ export async function addPasteButton() {
   await attachButtonToAllCodeBlocks(pasteButton);
 }
 
-function addUndoButton() {
-}
-
-function pushHistory(history: UpdateHistory) {
+/**
+ * コードブロックの編集履歴を保存する。 \
+ * 必要に応じてundoボタンの表示する。
+ */
+async function pushHistory(history: UpdateHistory) {
   const { targetCodeBlock: target } = history;
   const index = updateHistories.findIndex((e) => {
     const id = e.targetCodeBlock.titleLine.id;
@@ -88,10 +130,18 @@ function pushHistory(history: UpdateHistory) {
   } else {
     updateHistories[index] = history;
   }
+
+  await attachButtonToCodeBlock(undoButton, history.targetCodeBlock);
 }
 
-function deleteHistory(history: UpdateHistory) {
+/**
+ * コードブロックの編集履歴を削除する。 \
+ * 必要に応じてundoボタンを非表示にする。
+ */
+async function deleteHistory(history: UpdateHistory) {
   updateHistories = updateHistories.filter((e) => {
     e.targetCodeBlock.titleLine.id != history.targetCodeBlock.titleLine.id;
   });
+
+  await detachButtonFromCodeBlock(undoButton, history.targetCodeBlock);
 }
