@@ -32,7 +32,10 @@ interface UpdateHistory {
 /** 更新履歴を保持するオブジェクト */
 let updateHistories: UpdateHistory[] = [];
 
+/** 使用するWebSocket */
 let socket: Socket | undefined;
+/** 元に戻す時の警告を表示しない */
+let noUndoAlert = false;
 
 /** ペーストボタンの実装 */
 const pasteButton: Button = {
@@ -102,7 +105,7 @@ const undoButton: Button = {
     const { prevCode } = prevHistory;
     console.debug("prev code: %o", prevCode);
     console.debug("now code: %o", nowCode);
-    if (nowCode != prevCode) {
+    if (!noUndoAlert) {
       const answer = await scrapboxAlert(
         buildInAlertModes.OK_CANCEL,
         "コードブロックの中身を戻しても大丈夫ですか？",
@@ -120,7 +123,10 @@ const undoButton: Button = {
 
 /** 起動オプション */
 export interface RunOptions {
+  /** 使用するWebSocket */
   socket?: Socket;
+  /** 元に戻すときの警告を表示しない */
+  noUndoAlert?: boolean;
 }
 
 /**
@@ -128,6 +134,7 @@ export interface RunOptions {
  */
 export async function run(options?: RunOptions) {
   socket = options?.socket ?? await socketIO();
+  noUndoAlert = options?.noUndoAlert ?? noUndoAlert;
   await addPasteButton();
 }
 
