@@ -1,6 +1,7 @@
 /// <reference no-default-lib="true" />
 /// <reference lib="es2022" />
 
+import { execCursorEvents } from "./cursor.ts";
 import {
   buildInAlertModes,
   getCodeBlocks,
@@ -16,7 +17,6 @@ import {
   attachButtonToCodeBlock,
   Button,
   detachButtonFromCodeBlock,
-  rerenderButtons,
 } from "./ui.ts";
 
 /**
@@ -155,7 +155,7 @@ async function pushHistory(history: UpdateHistory) {
   }
 
   await attachButtonToCodeBlock(undoButton, history.targetCodeBlock);
-  await rerenderButtons();
+  await execCursorEvents();
 }
 
 /**
@@ -168,5 +168,5 @@ async function deleteHistory(history: UpdateHistory) {
   });
 
   await detachButtonFromCodeBlock(undoButton, history.targetCodeBlock);
-  await rerenderButtons();
+  await execCursorEvents();
 }
