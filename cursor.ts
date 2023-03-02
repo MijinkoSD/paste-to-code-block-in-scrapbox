@@ -31,18 +31,11 @@ export function removeCursorEventListener(handler: CursorEventHandler): void {
   cursorEvents = cursorEvents.filter((e) => Object.is(e, handler));
 }
 
-/** カーソル移動時に実行する関数の登録を全て削除する */
-function removeAllCursorEventListener(): void {
-  while (cursorEvents.length > 0) {
-    cursorEvents.shift();
-  }
-}
-
 /**
  * カーソル移動時のイベントを発生させる \
  * （登録した関数をまとめて実行するだけで、これ単体では自発的に実行されない）
  */
-async function execCursorEvents(): Promise<void> {
+export async function execCursorEvents(): Promise<void> {
   if (cursorEvents.length <= 0) return;
   const cursorLineId = findCursorLineId();
   const eventArgs: Parameters<CursorEventHandler> = [{ cursorLineId }];
@@ -51,6 +44,13 @@ async function execCursorEvents(): Promise<void> {
     wrappedEvents.push(e(...eventArgs));
   }
   await Promise.all(wrappedEvents);
+}
+
+/** カーソル移動時に実行する関数の登録を全て削除する */
+function removeAllCursorEventListener(): void {
+  while (cursorEvents.length > 0) {
+    cursorEvents.shift();
+  }
 }
 
 /** カーソル行の行IDを返す */
