@@ -28,6 +28,7 @@ interface UpdateHistory {
 }
 let updateHistories: UpdateHistory[] = [];
 
+/** ペーストボタンの実装 */
 const pasteButton: Button = {
   title: "Paste",
   iconClass: ["fa-regular", "fa-paste"],
@@ -69,6 +70,7 @@ const pasteButton: Button = {
   },
 };
 
+/** 元に戻す(Undo)ボタンの実装 */
 const undoButton: Button = {
   title: "Undo",
   iconClass: ["fa-solid", "fa-arrow-rotate-left"],
