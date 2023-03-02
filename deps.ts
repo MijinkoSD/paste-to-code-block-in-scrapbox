@@ -7,6 +7,14 @@ export type {
   TinyCodeBlock,
 } from "https://raw.githubusercontent.com/MijinkoSD/scrapbox-userscript-std/set-codeblock/mod.ts";
 
+// scrapbox-userscript-websocket
+export type {
+  Socket,
+} from "https://raw.githubusercontent.com/takker99/scrapbox-userscript-websocket/0.1.4/socket.ts";
+export {
+  socketIO,
+} from "https://raw.githubusercontent.com/takker99/scrapbox-userscript-websocket/0.1.4/socket.ts";
+
 // scrapbox-jp/typs
 import type {
   Scrapbox,

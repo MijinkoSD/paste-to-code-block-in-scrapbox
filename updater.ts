@@ -6,6 +6,8 @@ import {
   getCodeBlocks,
   scrapbox,
   scrapboxAlert,
+  Socket,
+  socketIO,
   TinyCodeBlock,
   updateCodeBlock,
 } from "./deps.ts";
@@ -14,6 +16,7 @@ import {
   attachButtonToCodeBlock,
   Button,
   detachButtonFromCodeBlock,
+  rerenderButtons,
 } from "./ui.ts";
 
 /**
@@ -26,7 +29,10 @@ interface UpdateHistory {
   /** 対象のコードブロック */
   targetCodeBlock: TinyCodeBlock;
 }
+/** 更新履歴を保持するオブジェクト */
 let updateHistories: UpdateHistory[] = [];
+
+let socket: Socket | undefined;
 
 /** ペーストボタンの実装 */
 const pasteButton: Button = {
@@ -66,7 +72,7 @@ const pasteButton: Button = {
     console.debug("clipboard text: %o", clipboardText);
     console.debug("code of adding history: %o", codeContent);
     await pushHistory({ prevCode: codeContent, targetCodeBlock: nowCodeBlock });
-    await updateCodeBlock(clipboardText, nowCodeBlock);
+    await updateCodeBlock(clipboardText, nowCodeBlock, { socket });
   },
 };
 
@@ -109,14 +115,26 @@ const undoButton: Button = {
 
     // undoボタンを削除
     await deleteHistory(prevHistory);
-    await updateCodeBlock(prevCode, nowCodeBlock);
+    await updateCodeBlock(prevCode, nowCodeBlock, { socket });
   },
 };
+
+export interface RunOptions {
+  socket?: Socket;
+}
+
+/**
+ * Scrapboxのコードブロックにペーストボタンを表示するUserScriptを起動する。
+ */
+export async function run(options?: RunOptions) {
+  socket = options?.socket ?? await socketIO();
+  await addPasteButton();
+}
 
 /**
  * コードブロックにペーストボタンを追加する。
  */
-export async function addPasteButton() {
+async function addPasteButton() {
   await attachButtonToAllCodeBlocks(pasteButton);
 }
 
@@ -137,6 +155,7 @@ async function pushHistory(history: UpdateHistory) {
   }
 
   await attachButtonToCodeBlock(undoButton, history.targetCodeBlock);
+  await rerenderButtons();
 }
 
 /**
@@ -149,4 +168,5 @@ async function deleteHistory(history: UpdateHistory) {
   });
 
   await detachButtonFromCodeBlock(undoButton, history.targetCodeBlock);
+  await rerenderButtons();
 }

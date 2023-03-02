@@ -1,1 +1,1 @@
-export { addPasteButton as run } from "./updater.ts";
+export { run } from "./updater.ts";
