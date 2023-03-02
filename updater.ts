@@ -106,9 +106,8 @@ const undoButton: Button = {
       const answer = await scrapboxAlert(
         buildInAlertModes.OK_CANCEL,
         "コードブロックの中身を戻しても大丈夫ですか？",
-        "前回の貼り付け時から、コードブロックへ編集が加えられています。\n" +
-          "コードブロックを貼り付け前の状態に戻すと、貼り付け後に加えた編集は破棄され戻すことができなくなります。\n" +
-          "それでもよろしいですか？",
+        "前回の貼り付け時から、コードブロックへ編集が加えられていた場合、" +
+          "コードブロックを貼り付け前の状態に戻すと、貼り付け後に加えた編集は破棄され戻すことができなくなります。\n",
       );
       if (answer.button != "OK") return;
     }
@@ -119,6 +118,7 @@ const undoButton: Button = {
   },
 };
 
+/** 起動オプション */
 export interface RunOptions {
   socket?: Socket;
 }
